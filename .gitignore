@@ -11,4 +11,4 @@ Unity/boss/obj/*
 Unity/boss/Packages/*
 Unity/boss/ProjectSettings/*
 Backend/boss/mainboss/migrations/*
-Unity/boss/Assets/_Scripts/SimpleJSON.cs/
+/Unity/boss/Assets/_Scripts/SimpleJSON.cs
