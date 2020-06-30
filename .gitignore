@@ -1,0 +1,13 @@
+*.asset
+*.json
+*.sln
+*.csproj
+*.cache
+*.meta
+*.pyc
+Unity/boss/Library/*
+Unity/boss/Logs/*
+Unity/boss/obj/*
+Unity/boss/Packages/*
+Unity/boss/ProjectSettings/*
+Backend/boss/mainboss/migrations/*
