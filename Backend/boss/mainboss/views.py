@@ -1,10 +1,11 @@
 from django.shortcuts import render
-from .models import Player, Boss, AbstractBoss
+from .models import Player, Boss, AbstractBoss, BossPlayer
 from django.http import JsonResponse
+from .serializers import PlayerSerializer, AbstractBossSerializer, BossSerializer, RewardSerializer, BossPlayerSerializer
 
 def check_user(request, player_id):
     try:
-        player = Player.objects.values().get(id = player_id)
+        player = PlayerSerializer(Player.objects.get(id = player_id)).data
         return JsonResponse(player, safe = False)
     except:
         return JsonResponse('false', safe = False)
@@ -60,6 +61,16 @@ def to_damage(request, player_id, damage_count):
 
     if player.active_boss is not None:
         player.active_boss.take_damage(damage_count)
+        try:
+            bp = BossPlayer.objects.get(player = player)
+        except:
+            bp = BossPlayer.objects.create(player = player, damage_count = damage_count)
+            player.active_boss.damages.add(bp)
+            player.active_boss.save()
+            bp.save()
+        if bp in player.active_boss.damages.all():
+            bp.damage_count += damage_count
+            bp.save()
         player.active_boss.save()
         if player.active_boss.isReached is True:
             return JsonResponse('Win', safe = False)
@@ -102,6 +113,20 @@ def take_id(request):
     taken_id = Player.objects.latest('id') + 1
     return JsonResponse(taken_id, safe = False)
 
-def get_friends(request, player_id):
-    player = Player.objects.values().get(id = player_id)
-    return JsonResponse(player, safe = False)
+def get_friend(request, player_id, friend_id):
+    player = Player.objects.get(id = player_id)
+    friend = Player.objects.get(id = friend_id)
+    try:
+        if friend in player.player_friends.all():
+            friend = PlayerSerializer(friend).data
+            return JsonResponse(friend, safe = False)
+    except:
+        return JsonResponse('false', safe = False)
+
+def get_damage_board(request, player_id):
+    player = Player.objects.get(id = player_id)
+    res = []
+    damages = player.active_boss.damages.order_by('damage_count')
+    for bossplayer in damages:  
+        res.append(BossPlayerSerializer(bossplayer).data)
+    return JsonResponse(res, safe = False)

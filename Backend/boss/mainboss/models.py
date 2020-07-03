@@ -21,6 +21,7 @@ class Boss(models.Model):
     name = models.CharField('Имя босса', max_length=50, null=True)
     isReached = models.BooleanField('Побежден ли босс?', default=False)
     reward = models.ForeignKey('Reward', on_delete=models.SET_NULL, verbose_name='награда за победу', null = True)
+    damages = models.ManyToManyField('BossPlayer', verbose_name='Игроки нанесшие урон', blank = True)
 
     class Meta:
         verbose_name = 'Босс'
@@ -58,8 +59,9 @@ class Player(models.Model):
         return self.name
 
 class Reward(models.Model):
-    coins_count = models.IntegerField('Кол-во монет', null=True)
-    flask_count = models.IntegerField('Кол-во колб', null=True)
+    objects = models.Manager()
+    coins_count = models.IntegerField('Кол-во монет', null=True, blank=True)
+    flask_count = models.IntegerField('Кол-во колб', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Награда'
@@ -67,3 +69,15 @@ class Reward(models.Model):
     
     def __str__(self):
         return 'Награда'
+
+class BossPlayer(models.Model):
+    objects = models.Manager()
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, verbose_name = 'Игрок нанесший урон')
+    damage_count = models.IntegerField('кол-во урона', default=0)
+
+    class Meta:
+        verbose_name = 'Игрок нанесший урон'
+        verbose_name_plural = 'Игроки нанесшие уроны'
+    
+    def __str__(self):
+        return self.player.name

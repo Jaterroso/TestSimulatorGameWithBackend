@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.Networking;
 using System.Collections;
 using SimpleJSON;
+using System.Collections.Generic;
 
 public class Player : MonoBehaviour
 {
@@ -35,9 +36,13 @@ public class Player : MonoBehaviour
     public BossSlider bossSlider;
     public GameObject bossFightPanel;
     public GameObject bossWinPanel;
+
+    public Transform damageBoardRoot;
+    public GameObject damageCellPref;
     public Text bossNameText;
     public Text bossHealthText;
     public Text playerFlaskText;
+    public List<GameObject> damageCells;
 
     [Header("UI boss win panel")]
     public Text winBossNameText;
@@ -57,8 +62,6 @@ public class Player : MonoBehaviour
         if (CheckUser())
         {
             LoadData();
-            string fUrl = $"http://127.0.0.1:8000/get_friends/{playerId}/";
-            StartCoroutine(LoadFriendsList(fUrl));
         }
         else
         {
@@ -69,7 +72,7 @@ public class Player : MonoBehaviour
 
     public bool CheckUser()
     {
-        if (PlayerPrefs.GetInt("id") == 0)
+        if (playerId == 0)
         {
             return false;
         }
@@ -94,7 +97,7 @@ public class Player : MonoBehaviour
     public void LoadData()
     {
         string url = $"http://127.0.0.1:8000/check_user/{playerId}/";
-        StartCoroutine(LoadPlayerData(url));
+        StartCoroutine(LoadPlayerData(url));    
     }
 
     public void OpenBossTable()
@@ -109,12 +112,10 @@ public class Player : MonoBehaviour
         string url = $"http://127.0.0.1:8000/to_damage/{playerId}/{playerFistDamage}/";
         StartCoroutine(AttackBossByDamage(url));
     }
-
     public void RefreshBossFight()
     {
         StartCoroutine(RefreshBossFightIen());
     }
-
     public void ShowWinPanel()
     {
         string url = $"http://127.0.0.1:8000/get_boss/{playerId}/";
@@ -178,6 +179,7 @@ public class Player : MonoBehaviour
         bossSlider.maxHealth = bossMaxHealth;
         bossSlider.Init();
         bossFightPanel.SetActive(true);
+        StartCoroutine(GetDamageCells());
         if (bossHealth <= 0)
         {
             bossFightPanel.SetActive(false);
@@ -200,16 +202,68 @@ public class Player : MonoBehaviour
         playerCoinsText.text = playerCoins.ToString();
         playerNameText.text = playerName;
         playerIdText.text = data["id"].ToString();
+
+        for(int i = 0; i < data["player_friends"].Count; i++)
+        {
+            var friendId = data["player_friends"][i];
+            string furl = $"http://127.0.0.1:8000/get_friend/{playerId}/{friendId}/";
+            var freq = UnityWebRequest.Get(furl);
+            yield return freq.SendWebRequest();
+            var fdata = JSON.Parse(freq.downloadHandler.text);
+            var card = Instantiate(friendCardPref, friendRoot);
+            card.GetComponent<FriendCard>().friendName = fdata["name"];
+            card.GetComponent<FriendCard>().friendLevel = fdata["level"];
+            card.GetComponent<FriendCard>().Init();
+        }
     }
 
-    IEnumerator LoadFriendsList(string url)
+    IEnumerator GetDamageCells()
     {
+        string url = $"http://127.0.0.1:8000/get_damage_board/{playerId}/";
         var req = UnityWebRequest.Get(url);
         yield return req.SendWebRequest();
         var data = JSON.Parse(req.downloadHandler.text);
         Debug.Log(data);
+        for(int i = 0; i < data.Count; i++)
+        {
+            if (damageCells.Count > 0)
+            {
+                bool contains = false;
+                for (int j = 0; j < damageCells.Count; j++)
+                {
+                    if (damageCells[j].GetComponent<DamageFriendCard>().id == data[i]["id"])
+                    {
+                        if (damageCells[j].GetComponent<DamageFriendCard>().damage != data[i]["damage_count"])
+                        {
+                            damageCells[j].GetComponent<DamageFriendCard>().damage = data[i]["damage_count"];
+                            damageCells[j].GetComponent<DamageFriendCard>().Init();
+                        }
+                        contains = true;
+                        continue;
+                    }
+                }
+                if (contains)
+                {
+                    continue;
+                }
+                var card = Instantiate(damageCellPref, damageBoardRoot);
+                card.GetComponent<DamageFriendCard>().damage = data[i]["damage_count"];
+                card.GetComponent<DamageFriendCard>().playerName = data[i]["player"];
+                card.GetComponent<DamageFriendCard>().id = data[i]["id"];
+                card.GetComponent<DamageFriendCard>().Init();
+                damageCells.Add(card);
+            }
+            else
+            {
+                var card = Instantiate(damageCellPref, damageBoardRoot);
+                card.GetComponent<DamageFriendCard>().damage = data[i]["damage_count"];
+                card.GetComponent<DamageFriendCard>().playerName = data[i]["player"];
+                card.GetComponent<DamageFriendCard>().id = data[i]["id"];
+                card.GetComponent<DamageFriendCard>().Init();
+                damageCells.Add(card);
+            }
+        }
     }
-
     IEnumerator OpenBossTableIen(int playerId, string url)
     {
         var req = UnityWebRequest.Get(url);

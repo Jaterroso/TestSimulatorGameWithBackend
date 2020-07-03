@@ -5,6 +5,7 @@
 *.cache
 *.meta
 *.pyc
+*.unity
 Unity/boss/Library/*
 Unity/boss/Logs/*
 Unity/boss/obj/*
