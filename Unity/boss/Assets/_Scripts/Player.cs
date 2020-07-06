@@ -134,6 +134,17 @@ public class Player : MonoBehaviour
         StartCoroutine(TryToUseFlask(url));
     }
 
+    public void RemoveAllDamagesCells()
+    {
+        for (int i = 0; i < damageCells.Count; i++)
+        {
+            damageCells.Remove(damageCells[i]);
+        }
+        for (int i = 0; i < damageBoardRoot.childCount; i++)
+        {
+            Destroy(damageBoardRoot.GetChild(i).gameObject);
+        }
+    }
     public IEnumerator TryToUseFlask(string url)
     {
         var req = UnityWebRequest.Get(url);
@@ -224,12 +235,12 @@ public class Player : MonoBehaviour
         yield return req.SendWebRequest();
         var data = JSON.Parse(req.downloadHandler.text);
         Debug.Log(data);
-        for(int i = 0; i < data.Count; i++)
+        if (damageCells.Count > 0)
         {
-            if (damageCells.Count > 0)
+            for(int i = 0; i < data.Count; i++)
             {
                 bool contains = false;
-                for (int j = 0; j < damageCells.Count; j++)
+                for(int j = 0; j < damageCells.Count; j++)
                 {
                     if (damageCells[j].GetComponent<DamageFriendCard>().id == data[i]["id"])
                     {
@@ -253,7 +264,10 @@ public class Player : MonoBehaviour
                 card.GetComponent<DamageFriendCard>().Init();
                 damageCells.Add(card);
             }
-            else
+        }
+        else
+        {
+            for(int i = 0; i < data.Count; i++)
             {
                 var card = Instantiate(damageCellPref, damageBoardRoot);
                 card.GetComponent<DamageFriendCard>().damage = data[i]["damage_count"];
@@ -309,6 +323,7 @@ public class Player : MonoBehaviour
         winBossMaxHealthText.text = maxHealth;
         winBossNameText.text = name;
         bossWinPanel.SetActive(true);
+        RemoveAllDamagesCells();
     }
 
     IEnumerator GetBossesTable(string url)

@@ -64,7 +64,7 @@ def to_damage(request, player_id, damage_count):
         try:
             bp = BossPlayer.objects.get(player = player)
         except:
-            bp = BossPlayer.objects.create(player = player, damage_count = damage_count)
+            bp = BossPlayer.objects.create(player = player, damage_count = 0)
             player.active_boss.damages.add(bp)
             player.active_boss.save()
             bp.save()
@@ -89,6 +89,9 @@ def get_boss(request, player_id):
     boss = Boss.objects.values().get(id = player_boss.id)
     player = Player.objects.get(id = player_id)
     player.active_boss = None
+    bossplayer = BossPlayer.objects.get(player = player)
+    if bossplayer is not None:
+        bossplayer.delete()
     player.save()
     return JsonResponse(boss, safe = False)
 

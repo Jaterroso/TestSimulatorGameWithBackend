@@ -81,3 +81,7 @@ class BossPlayer(models.Model):
     
     def __str__(self):
         return self.player.name
+
+class BossCounter(models.Model):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, verbose_name = 'Игрок')
+    boss = models.IntegerField('') 
